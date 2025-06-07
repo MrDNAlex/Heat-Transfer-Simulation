@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.InputSystem.XInput;
@@ -13,6 +14,47 @@ public class FridgeTemperature : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private float[,] tempData;
     private int count = 0;
+
+    public int ChildCount;
+    public Transform[] Children;
+
+    public enum HeatDiffusionCase
+    {
+        Middle,
+        Top,
+        Bottom,
+        Right,
+        Left,
+        BottomLeft,
+        BottomRight,
+        TopRight,
+        TopLeft
+    }
+
+    public HeatDiffusionCase GetDiffusionCase(int width, int height)
+    {
+        int leftSide = this.width - 1;
+        int topSide = this.height - 1;
+
+        if (width == 0 && height == 0)
+            return HeatDiffusionCase.BottomLeft;
+        else if (width == leftSide && height == 0)
+            return HeatDiffusionCase.BottomRight;
+        else if (width == 0 && height == topSide)
+            return HeatDiffusionCase.TopLeft;
+        else if (width == leftSide && height == topSide)
+            return HeatDiffusionCase.TopRight;
+        else if (width == 0)
+            return HeatDiffusionCase.Left;
+        else if (width == leftSide)
+            return HeatDiffusionCase.Right;
+        else if (height == topSide)
+            return HeatDiffusionCase.Top;
+        else if (height == 0)
+            return HeatDiffusionCase.Bottom;
+        else
+            return HeatDiffusionCase.Middle;
+    }
 
     void Start()
     {
@@ -35,7 +77,7 @@ public class FridgeTemperature : MonoBehaviour
             for (int y = 0; y < height; y++)
                 tempData[x, y] = 0.75f;
 
-                texture.Apply();
+        texture.Apply();
 
         // Create sprite from texture
         Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 1);
@@ -44,6 +86,17 @@ public class FridgeTemperature : MonoBehaviour
         //Fit Camera to height of the fridge (+ 5% buffer)
         float orthoSizeHeight = spriteRenderer.bounds.size.y / 2f;
         camera.orthographicSize = orthoSizeHeight * 1.05f;
+
+        ChildCount = this.transform.childCount;
+        Children = new Transform[ChildCount];
+
+        for (int i = 0; i < ChildCount; i++)
+        {
+            Children[i] = transform.GetChild(i);
+            Children[i].GetComponent<TemperatureSprite>().SetParentSize(this.spriteRenderer.bounds.size);
+        }
+            
+
     }
 
     void Update()
@@ -89,6 +142,30 @@ public class FridgeTemperature : MonoBehaviour
             for (int j = 0; j < 5; j++)
             {
                 tempData[35 + i, 70 + j] = 1;
+            }
+        }
+    }
+
+    private void SetSpriteTemp()
+    {
+        int halfWidth = width / 2;
+        int halfHeight = height / 2;
+
+        foreach (Transform child in Children)
+        {
+            TemperatureSprite sprite = child.GetComponent<TemperatureSprite>();
+
+            Vector3 childPos = child.position;
+
+            int x = (int)childPos.x;
+            int y = (int)childPos.y;
+
+            for (int w = -1; w < 1; w++)
+            {
+                for (int h = -1; h < 1; h++)
+                {
+                    tempData[x + w + halfWidth, y + h + halfHeight] = sprite.Temperature;
+                }
             }
         }
     }
@@ -173,9 +250,11 @@ public class FridgeTemperature : MonoBehaviour
 
                 //SetFloatingSquareCondition();
 
-                SetFloatingSquareCondition(25, 25, 10, 10, 0.25f);
+                //SetFloatingSquareCondition(25, 25, 10, 10, 0.25f);
 
-                SetFloatingSquareCondition(75, 75, 4, 4, 1f);
+                //SetFloatingSquareCondition(75, 75, 4, 4, 1f);
+
+                SetSpriteTemp();
 
                 UpdateTemperature(x, y);
             }
