@@ -4,8 +4,9 @@ using UnityEngine.InputSystem.XInput;
 
 public class FridgeTemperature : MonoBehaviour
 {
+    public Camera camera;
     public float multiplier = 1.0f;
-    public int period = 40;
+    public int period = 80;
     public int width;
     public int height;
     private Texture2D texture;
@@ -30,20 +31,19 @@ public class FridgeTemperature : MonoBehaviour
             for (int y = 0; y < height; y++)
                 texture.SetPixel(x, y, Color.black);
 
-        /*for (int x = 0; x < width; x++)
-        {
+        for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
-            {
-                if (x % 5 == 0)
-                    tempData[x, y] = 1;
-            }
-        }*/
+                tempData[x, y] = 0.75f;
 
-        texture.Apply();
+                texture.Apply();
 
         // Create sprite from texture
         Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 1);
         spriteRenderer.sprite = sprite;
+
+        //Fit Camera to height of the fridge (+ 5% buffer)
+        float orthoSizeHeight = spriteRenderer.bounds.size.y / 2f;
+        camera.orthographicSize = orthoSizeHeight * 1.05f;
     }
 
     void Update()
@@ -93,16 +93,36 @@ public class FridgeTemperature : MonoBehaviour
         }
     }
 
+    private void SetFloatingSquareCondition(int startX, int startY, int sizeX, int sizeY, float tempValue)
+    {
+        int halfWidth = width / 2;
+        int halfHeight = height / 2;
+
+        int sinX = (int)(halfWidth * 0.25 * Mathf.Sin(2 * 3.14f * ((float)count) / period));
+        int sinY = (int)(halfHeight * 0.25 * Mathf.Sin(2 * 3.14f * 4 * ((float)count) / period));
+
+        for (int i = 0; i < sizeX; i++)
+        {
+            for (int j = 0; j < sizeY; j++)
+            {
+                tempData[startX + i + sinX, startY + j + sinY] = tempValue;
+            }
+        }
+    }
+
     private void SetFloatingSquareCondition()
     {
-        int sinX = (int)(25 * Mathf.Sin(2 * 3.14f * ((float)count) / period));
-        int sinY = (int)(25 * Mathf.Sin(2 * 3.14f * 3 * ((float)count) / period));
+        int halfWidth = width / 2;
+        int halfHeight = height / 2;
+
+        int sinX = (int)(halfWidth * 0.25 * Mathf.Sin(2 * 3.14f * ((float)count) / period));
+        int sinY = (int)(halfHeight * 0.25 * Mathf.Sin(2 * 3.14f * 4 * ((float)count) / period));
 
         for (int i = 0; i < 5; i++)
         {
             for (int j = 0; j < 5; j++)
             {
-                tempData[50 + i + sinX, 50 + j + sinY] = 1;
+                tempData[halfWidth + i + sinX, halfHeight + j + sinY] = 1;
             }
         }
     }
@@ -112,30 +132,27 @@ public class FridgeTemperature : MonoBehaviour
         float val = 0;
 
         //Corners need to be implemented
+
+        //Bottom Left
         if (width == 0 && height == 0)
-            return;
-
-        if (width == 0 && height == this.height - 1)
-            return;
-
-        if (width == this.width - 1 && height == 0)
-            return;
-
-        if (width == this.width - 1 && height == this.height - 1)
-            return;
-
-        if (width == 0)
+            val = 2 * tempData[width + 1, height] + 2 * tempData[width, height + 1];
+        //Top Left
+        else if (width == 0 && height == this.height - 1)
+            val = 2 * tempData[width + 1, height] + 2 * tempData[width, height - 1];
+        //Bottom right
+        else if (width == this.width - 1 && height == 0)
+            val = 2 * tempData[width - 1, height] + 2 * tempData[width, height + 1];
+        //Top Right
+        else if (width == this.width - 1 && height == this.height - 1)
+            val = 2 * tempData[width - 1, height] + 2 * tempData[width, height - 1];
+        else if (width == 0)
             val = 2 * tempData[width + 1, height] + tempData[width, height - 1] + tempData[width, height + 1];
-
         else if (width == this.width - 1)
             val = 2 * tempData[width - 1, height] + tempData[width, height - 1] + tempData[width, height + 1];
-
         else if (height == 0)
             val = tempData[width - 1, height] + tempData[width + 1, height] + 2 * tempData[width, height + 1];
-
         else if (height == this.height - 1)
             val = tempData[width - 1, height] + tempData[width + 1, height] + 2 * tempData[width, height - 1];
-
         else
             val = (tempData[width - 1, height] + tempData[width + 1, height] + tempData[width, height - 1] + tempData[width, height + 1]);
 
@@ -146,7 +163,7 @@ public class FridgeTemperature : MonoBehaviour
         texture.SetPixel(width, height, new Color(0, 0, tempData[width, height]));
     }
 
-    private void UpdateRegularTemp ()
+    private void UpdateRegularTemp()
     {
         for (int x = 0; x < width; x++)
         {
@@ -154,7 +171,11 @@ public class FridgeTemperature : MonoBehaviour
             {
                 //SetSquareCondition();
 
-                SetFloatingSquareCondition();
+                //SetFloatingSquareCondition();
+
+                SetFloatingSquareCondition(25, 25, 10, 10, 0.25f);
+
+                SetFloatingSquareCondition(75, 75, 4, 4, 1f);
 
                 UpdateTemperature(x, y);
             }
