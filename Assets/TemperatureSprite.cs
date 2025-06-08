@@ -1,36 +1,36 @@
 using UnityEngine;
 
-public class TemperatureSprite : MonoBehaviour
+public class TemperatureSprite : TempSprite
 {
     public bool isCold;
     public float Mag;
     public float Speed;
-    public float Temperature;
     public Vector3 MovementDirection;
     public float Offset;
     public Vector3 ParentSize;
 
-    float minX;
-    float maxX;
-    float minY;
-    float maxY;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+
+        this.TempSize = 2;
+
+        IsActive = true;
+
         //this.Parent = this.transform.parent;
         this.Offset = Random.Range(0, 100000f);
 
         if (isCold)
-            Temperature = Random.Range(0.05f, 0.4f);
+            Temperature = Random.Range(0.15f, 0.3f);
         else
-            Temperature = Random.Range(0.6f, 0.95f);
+            Temperature = Random.Range(0.7f, 0.85f);
 
         MovementDirection = new Vector2(Random.Range(-1, 1), Random.Range(-1, 1));
 
         transform.position = new Vector3(Random.Range(minX, maxX), Random.Range(minY, maxY), -1);
 
-        Speed = Random.Range(0.5f, 1.2f);
+        Speed = Random.Range(0.5f, 0.9f);
     }
 
     public void SetColdSprite (bool isCold)

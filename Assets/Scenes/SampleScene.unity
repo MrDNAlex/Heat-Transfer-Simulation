@@ -370,8 +370,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SpritePrefab: {fileID: 8196108301269622399, guid: ed1507d5e775f434ca0ec2622db240a2, type: 3}
+  VentPrefab: {fileID: 4486738056405932506, guid: 488a14f13d1983f41a8796eebca604d0, type: 3}
   Fridge: {fileID: 1999659179}
-  SpriteCount: 3
+  SpriteCount: 5
+  VentCount: 15
+  FridgeWidth: 100
+  FridgeHeight: 150
 --- !u!4 &1907723618
 Transform:
   m_ObjectHideFlags: 0

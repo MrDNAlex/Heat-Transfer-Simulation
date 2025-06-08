@@ -10,7 +10,7 @@ public class FridgeTemperature : MonoBehaviour
     public int height;
     private Texture2D texture;
     private SpriteRenderer spriteRenderer;
-    private float[,] tempData;
+    public float[,] tempData;
     private int count = 0;
     public float AvgTemp;
     public InputAction inputAction;
@@ -85,7 +85,26 @@ public class FridgeTemperature : MonoBehaviour
 
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
-                tempData[x, y] = 0.1f;
+            {
+                tempData[x, y] = 0.5f;
+
+                if (x < 3 || x > this.width - 3)
+                    continue;
+
+                if (y < 3 || y > this.height - 3)
+                    continue;
+
+                if (y % 10 == 0)
+                {
+                    float randTemp = 0.5f + Random.Range(-0.3f, 0.3f);
+
+                    for (int i = -2; i < 2; i++)
+                        for (int j = -2; j < 2; j++)
+                            tempData[x + i, y + j] = randTemp;
+
+                }
+            }
+                
 
         texture.Apply();
 
@@ -107,7 +126,11 @@ public class FridgeTemperature : MonoBehaviour
         for (int i = 0; i < ChildCount; i++)
         {
             Children[i] = transform.GetChild(i);
-            Children[i].GetComponent<TemperatureSprite>().SetParentSize(this.spriteRenderer.bounds.size);
+
+            if (Children[i].GetComponent<TemperatureSprite>())
+                Children[i].GetComponent<TemperatureSprite>().SetParentSize(this.spriteRenderer.bounds.size);
+            else if (Children[i].GetComponent<Vent>())
+                Children[i].GetComponent<Vent>().SetParentSize(this.spriteRenderer.bounds.size);
         }
     }
 
@@ -116,7 +139,6 @@ public class FridgeTemperature : MonoBehaviour
         UpdateRegularTemp();
 
         float sum = 0;
-
 
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
@@ -130,7 +152,7 @@ public class FridgeTemperature : MonoBehaviour
         //UpdateSinusoidalTemp();
         
 
-        Debug.Log($"Average Temp of Fridge : {AvgTemp}");
+        //Debug.Log($"Average Temp of Fridge : {AvgTemp}");
 
         //if (inputAction.ReadValue<float>() == 1f)
         //    this.transform.GetComponent<SpriteRenderer>().enabled = true;
@@ -179,12 +201,12 @@ public class FridgeTemperature : MonoBehaviour
         }
     }
 
-    public float GetTempMultiplier (TemperatureSprite sprite)
+    public float GetTempMultiplier (TempSprite sprite)
     {
-        if (sprite.isCold && AvgTemp > 0.6f)
+        if (sprite.Temperature < 0.5f &&  AvgTemp > 0.6f)
             return 0.8f;
 
-        if (!sprite.isCold && AvgTemp < 0.4f)
+        if (sprite.Temperature > 0.5f && AvgTemp < 0.4f)
             return 1.2f;
 
         return 1f;
@@ -195,9 +217,46 @@ public class FridgeTemperature : MonoBehaviour
         int halfWidth = width / 2;
         int halfHeight = height / 2;
 
+        /*foreach (Transform child in Children)
+        {
+            TempSprite sprite = child.GetComponent<TempSprite>();
+
+            if (sprite == null)
+                continue;
+
+            if (!sprite.IsActive)
+                continue;
+
+            float multiplier = GetTempMultiplier(sprite);
+
+            Vector3 childPos = child.position;
+
+            int x = (int)childPos.x;
+            int y = (int)childPos.y;
+            int size = sprite.TempSize;
+
+            float temp = sprite.Temperature * multiplier;
+
+            for (int w = -size; w < size + 1; w++)
+            {
+                for (int h = -size; h < size + 1; h++)
+                {
+                    tempData[x + w + halfWidth, y + h + halfHeight] = temp;
+                }
+            }
+
+        }*/
+
+
+
+
+
         foreach (Transform child in Children)
         {
             TemperatureSprite sprite = child.GetComponent<TemperatureSprite>();
+
+            if (sprite == null)
+                continue;
 
             float multiplier = GetTempMultiplier(sprite);
 
@@ -208,13 +267,62 @@ public class FridgeTemperature : MonoBehaviour
 
             float temp = sprite.Temperature * multiplier;
 
+            for (int w = -1; w < 2; w++)
+            {
+                for (int h = -1; h < 2; h++)
+                {
+                    tempData[x + w + halfWidth, y + h + halfHeight] = temp;
+                }
+            }
+        }
+
+        foreach (Transform child in Children)
+        {
+            Vent vent = child.GetComponent<Vent>();
+
+            if (vent == null)
+                continue;
+
+            if (!vent.IsActive)
+                continue;
+
+            Vector3 childPos = child.position;
+
+            int x = (int)childPos.x;
+            int y = (int)childPos.y;
+
+            int size = vent.TempSize;
+
+            for (int w = -size; w < size + 1; w++)
+            {
+                for (int h = -size; h < size +1 ; h++)
+                {
+                    tempData[x + w + halfWidth, y + h + halfHeight] = vent.Temperature;
+                }
+            }
+
+
+
+
+
+
+
+            /*float multiplier = GetTempMultiplier(vent);
+
+            Vector3 childPos = child.position;
+
+            int x = (int)childPos.x;
+            int y = (int)childPos.y;
+
+            float temp = vent.Temperature * multiplier;
+
             for (int w = -1; w < 1; w++)
             {
                 for (int h = -1; h < 1; h++)
                 {
                     tempData[x + w + halfWidth, y + h + halfHeight] = temp;
                 }
-            }
+            }*/
         }
     }
 
@@ -285,11 +393,29 @@ public class FridgeTemperature : MonoBehaviour
 
         tempData[width, height] = Mathf.Clamp01(val / 4);
 
-        if (tempData[width, height] > 0.5f)
-            texture.SetPixel(width, height, new Color((tempData[width, height] * 2) - 0.5f, 0, 0));
+
+        texture.SetPixel(width, height, GetColor(tempData[width, height]));
+
+       /* if (tempData[width, height] > 0.5f)
+            texture.SetPixel(width, height, new Color((tempData[width, height] * 2) - 0.5f, 0, 0, 0.3f));
         else
-            texture.SetPixel(width, height, new Color(0, 0, 1 - (tempData[width, height] * 2)));
+            texture.SetPixel(width, height, new Color(0, 0, 1 - (tempData[width, height] * 2), 0.3f));*/
     }
+
+    private Color GetColor(float temp)
+    {
+        float distFromCenter = Mathf.Abs(temp - 0.5f); // 0 when temp = 0.5
+        float maxDist = 0.2f; // max possible distance from 0.5
+        float t = distFromCenter / maxDist; // 0 at center, 1 at edges
+
+        // More green at center (t = 0), more red at edges (t = 1)
+        float red = t;
+        float green = 1 - t;
+
+        return new Color(red, green, 0, 0.3f);
+    }
+
+
 
     private void UpdateRegularTemp()
     {
