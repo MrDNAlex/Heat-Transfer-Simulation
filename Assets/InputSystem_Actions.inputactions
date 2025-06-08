@@ -990,6 +990,34 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "ShowMap",
+            "id": "00b1bc7a-55e0-4a3f-8c6a-901163ddc380",
+            "actions": [
+                {
+                    "name": "Show",
+                    "type": "Button",
+                    "id": "6fbe8a25-0327-440c-a75c-3d7877262a5b",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "4a81cc12-4969-4d22-91cd-b39fc6144aea",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Show",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": [
